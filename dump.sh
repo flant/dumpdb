@@ -1,6 +1,6 @@
 #!/bin/bash
 
-TEMP=$(getopt -o h --long source-host:,source-login:,source-password:,source-port:,source-database:,dest-host:,dest-login:,dest-password:,dest-port:,dest-database:,dump-options:,restore-options:,help \
+TEMP=$(getopt -o h --long source-host:,source-login:,source-password:,source-port:,source-database:,source-table:,dest-host:,dest-login:,dest-password:,dest-port:,dest-database:,dump-options:,restore-options:,help \
               -n 'dump.sh' -- "$@")
 eval set -- "$TEMP"
 
@@ -19,7 +19,9 @@ while true; do
         --source-port )
             SOURCE_PORT="$2"; shift 2;;
         --source-database )
-            SOURCE_DATABASE="$2"; shift 2;;            
+            SOURCE_DATABASE="$2"; shift 2;;
+        --source-table )
+            SOURCE_TABLE="$2"; shift 2;;            
         --dest-host )
             DESTINATION_HOST="$2"; shift 2;;
         --dest-login )
@@ -51,16 +53,16 @@ then
     exit 1
 elif [ "$1" == "mysql" ]
 then
-    mysqldump $DUMP_OPTIONS -p"$SOURCE_PASSWORD" -h "$SOURCE_HOST" -u "$SOURCE_LOGIN" -P "$SOURCE_PORT" "$SOURCE_DATABASE" | \
+    mysqldump $DUMP_OPTIONS -p"$SOURCE_PASSWORD" -h "$SOURCE_HOST" -u "$SOURCE_LOGIN" -P "$SOURCE_PORT" "$SOURCE_DATABASE" "$SOURCE_TABLE" | \
     mysql $RESTORE_OPTIONS -p"$DESTINATION_PASSWORD" -h "$DESTINATION_HOST" -u "$DESTINATION_LOGIN"  -P "$DESTINATION_PORT" "$DESTINATION_DATABASE"
 elif [ "$1" == "postgresql" ]
 then
+    if [ -z "$SOURCE_TABLE" ]; then PSQL_SOURCE_TABLE="$SOURCE_TABLE" ; PSQL_TABLE="--table"; fi
     (PGPASSWORD="$SOURCE_PASSWORD" \
-    pg_dump $DUMP_OPTIONS -h "$SOURCE_HOST" -U "$SOURCE_LOGIN" -p "$SOURCE_PORT" "$SOURCE_DATABASE") | \
+    pg_dump $DUMP_OPTIONS -h "$SOURCE_HOST" -U "$SOURCE_LOGIN" -p "$SOURCE_PORT" "$SOURCE_DATABASE" "$PSQL_TABLE" "$PSQL_SOURCE_TABLE") | \
     (PGPASSWORD="$DESTINATION_PASSWORD" \
     psql $RESTORE_OPTIONS -h "$DESTINATION_HOST" -U "$DESTINATION_LOGIN"  -p "$DESTINATION_PORT" "$DESTINATION_DATABASE")
 else
     echo 'Unsupported RDBMS. Currently, MySQL and PostgreSQL are supported.'
     exit 1
 fi
-
