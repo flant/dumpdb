@@ -53,13 +53,18 @@ then
     exit 1
 elif [ "$1" == "mysql" ]
 then
-    mysqldump $DUMP_OPTIONS -p"$SOURCE_PASSWORD" -h "$SOURCE_HOST" -u "$SOURCE_LOGIN" -P "$SOURCE_PORT" "$SOURCE_DATABASE" "$SOURCE_TABLE" | \
+    mysqldump $DUMP_OPTIONS -p"$SOURCE_PASSWORD" -h "$SOURCE_HOST" -u "$SOURCE_LOGIN" -P "$SOURCE_PORT" "$SOURCE_DATABASE" $SOURCE_TABLE | \
     mysql $RESTORE_OPTIONS -p"$DESTINATION_PASSWORD" -h "$DESTINATION_HOST" -u "$DESTINATION_LOGIN"  -P "$DESTINATION_PORT" "$DESTINATION_DATABASE"
 elif [ "$1" == "postgresql" ]
 then
-    if [ -z "$SOURCE_TABLE" ]; then PSQL_SOURCE_TABLE="$SOURCE_TABLE" ; PSQL_TABLE="--table"; fi
+    if [ -z "$SOURCE_TABLE" ]; then 
+        for table in "SOURCE_TABLE"; do
+            TABLE_ARRAY+=("-t")
+            TABLE_ARRAY+=("$table")
+        done;
+    fi
     (PGPASSWORD="$SOURCE_PASSWORD" \
-    pg_dump $DUMP_OPTIONS -h "$SOURCE_HOST" -U "$SOURCE_LOGIN" -p "$SOURCE_PORT" "$SOURCE_DATABASE" "$PSQL_TABLE" "$PSQL_SOURCE_TABLE") | \
+    pg_dump $DUMP_OPTIONS -h "$SOURCE_HOST" -U "$SOURCE_LOGIN" -p "$SOURCE_PORT" "$SOURCE_DATABASE" "${TABLE_ARRAY[@]/#/-}") | \
     (PGPASSWORD="$DESTINATION_PASSWORD" \
     psql $RESTORE_OPTIONS -h "$DESTINATION_HOST" -U "$DESTINATION_LOGIN"  -p "$DESTINATION_PORT" "$DESTINATION_DATABASE")
 else
