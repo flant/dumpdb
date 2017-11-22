@@ -57,7 +57,7 @@ then
     mysql $RESTORE_OPTIONS -p"$DESTINATION_PASSWORD" -h "$DESTINATION_HOST" -u "$DESTINATION_LOGIN"  -P "$DESTINATION_PORT" "$DESTINATION_DATABASE"
 elif [ "$1" == "postgresql" ]
 then
-    if [ -z "$SOURCE_TABLE" ]; then 
+    if ! [ -z "$SOURCE_TABLE" ]; then 
         for table in "SOURCE_TABLE"; do
             TABLE_ARRAY+=("-t")
             TABLE_ARRAY+=("$table")
